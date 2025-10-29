@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { UserModule } from './users/user.module';
+import { ResponseInterceptor } from 'common/interceptors/response.interceptor';
 
-// ...existing code...
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+    app.useGlobalInterceptors(new ResponseInterceptor());
+
   
   // Enable CORS
   app.enableCors();
@@ -18,7 +20,7 @@ async function bootstrap() {
     .build();
     
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 
   // Listen on all network interfaces
   await app.listen(3000, '0.0.0.0');

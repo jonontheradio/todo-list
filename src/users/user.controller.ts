@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, ConflictException, HttpStatus, NotFoundException, Param, Patch, HttpException } from '@nestjs/common';
+import { Body, Controller, Post, Get, ConflictException, HttpStatus, NotFoundException, Param, Patch, HttpException, ParseIntPipe, Delete } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -10,37 +10,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UserController {
     constructor(
         private readonly userService: UserService
-    ) { }
-
-    @Post()
-    @ApiOperation({ summary: 'Create a new user' })
-    @ApiResponse({
-        status: 201,
-        description: 'User successfully created',
-        type: User
-    })
-    @ApiResponse({
-        status: HttpStatus.CONFLICT,
-        description: 'User with this email already exists'
-    })
-    @ApiResponse({
-        status: HttpStatus.BAD_REQUEST,
-        description: 'Invalid input data'
-    })
-    async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
-        try {
-            return await this.userService.createUser(
-                createUserDto.name,
-                createUserDto.mail,
-                createUserDto.password
-            );
-        } catch (error) {
-            if (error.message.includes('already exists')) {
-                throw new ConflictException(error.message);
-            }
-            throw error;
-        }
-    }
+    ) {}
 
     @Get()
     @ApiOperation({ summary: 'Get all users' })
@@ -79,7 +49,7 @@ export class UserController {
         return user;
     }
 
-    @Patch(':mail')
+    @Patch(':id')
     @ApiOperation({ summary: 'Update user details' })
     @ApiResponse({
         status: 200,
@@ -90,9 +60,33 @@ export class UserController {
         description: 'User not found'
     })
     async updateUser(
-        @Param('mail') mail: string,
+        @Param('id', ParseIntPipe) id: number,
         @Body() updateUserDto: UpdateUserDto
-    ): Promise<Partial<User>> {
-        return this.userService.updateUser(mail, updateUserDto);
+    ){
+        const updatedUser = await this.userService.updateUser(id, updateUserDto);
+        return({
+            message: 'User updated successfully',
+            result: updatedUser
+        })
+    }
+
+    @Delete(':id')
+    @ApiOperation({ summary: 'Delete an user'})
+    @ApiResponse({
+        status: 200,
+        description: 'User deleted successfully'
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'User not found'
+    })
+    async deleteUser(
+        @Param('id', ParseIntPipe) id: number
+    ){
+      await this.userService.deleteUser(id);
+        return({
+            message: 'User deleted successfully',
+            result: null
+        })
     }
 }
